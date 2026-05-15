@@ -119,3 +119,41 @@ export async function apiHistory(
 export async function apiClearHistory(): Promise<void> {
   await fetch(`${BASE}/history`, { method: "DELETE" });
 }
+
+export interface BulkValidateResult {
+  card: string;
+  isValid: boolean;
+  cardType: string | null;
+  errors: string[];
+}
+
+export interface BulkValidateResponse {
+  success: boolean;
+  total: number;
+  valid: number;
+  invalid: number;
+  results: BulkValidateResult[];
+}
+
+export async function apiBulkValidate(
+  cards: string[],
+): Promise<BulkValidateResponse> {
+  const res = await fetch(`${BASE}/validate/bulk`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cards }),
+  });
+  return res.json();
+}
+
+export async function apiValidateFile(
+  file: File,
+): Promise<BulkValidateResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${BASE}/validate/file`, {
+    method: "POST",
+    body: formData,
+  });
+  return res.json();
+}
