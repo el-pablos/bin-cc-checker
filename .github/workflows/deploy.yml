@@ -1,0 +1,25 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /var/www/cc-gen
+            git pull origin main
+            npm ci
+            npm run build
+            pm2 restart cc-gen || pm2 start ecosystem.config.cjs
+            sleep 2
+            curl -sf http://localhost:3001/api/health || exit 1
+            echo "Deploy success!"
