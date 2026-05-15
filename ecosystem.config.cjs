@@ -9,6 +9,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3001,
       },
+      exec_mode: 'fork',
       instances: 1,
       autorestart: true,
       watch: false,
