@@ -5,6 +5,8 @@ dist
 !.env.example
 *.local
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.key
 *.pem
@@ -12,3 +14,7 @@ dist
 Thumbs.db
 .vscode
 .idea
+.playwright-mcp
+.opencode-jce
+*.png
+docs/screenshots/

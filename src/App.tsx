@@ -2,17 +2,19 @@ import { useState } from "react";
 import Generator from "./components/Generator";
 import Validator from "./components/Validator";
 import BinChecker from "./components/BinChecker";
+import BulkValidator from "./components/BulkValidator";
 import History from "./components/History";
 
-type Tab = "generate" | "validate" | "bin" | "history";
+type Tab = "generate" | "validate" | "bin" | "bulk" | "history";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>("generate");
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "generate", label: "Generator" },
-    { key: "validate", label: "Validator" },
-    { key: "bin", label: "BIN Check" },
+    { key: "validate", label: "Validate" },
+    { key: "bulk", label: "Bulk" },
+    { key: "bin", label: "BIN" },
     { key: "history", label: "History" },
   ];
 
@@ -47,6 +49,7 @@ function App() {
         <main>
           {activeTab === "generate" && <Generator />}
           {activeTab === "validate" && <Validator />}
+          {activeTab === "bulk" && <BulkValidator />}
           {activeTab === "bin" && <BinChecker />}
           {activeTab === "history" && <History />}
         </main>
@@ -54,7 +57,7 @@ function App() {
         <footer className="mt-6 sm:mt-8 text-center">
           <p className="text-[10px] sm:text-xs text-gray-600">
             VCC Generator & BIN Checker v1.0.0 — Telegram Bot:
-            @cc_gen_checker_bot
+            @tamastredictmoon_bot
           </p>
         </footer>
       </div>
