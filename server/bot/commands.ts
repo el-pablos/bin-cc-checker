@@ -128,6 +128,94 @@ Pilih menu di bawah:`;
     }
   });
 
+  bot.command("bulk", async (ctx) => {
+    const input = ctx.message?.text?.replace(/^\/bulk\s*/, "").trim();
+    if (!input) {
+      await ctx.reply(
+        "📋 *Bulk Validate*\n\nKirim `/bulk` diikuti list kartu (1 per baris):\n```\n/bulk\n4111111111111111|05|2030|123\n5500000000000004|08|2028|456\n```",
+        { parse_mode: "Markdown", reply_markup: backKeyboard() },
+      );
+      return;
+    }
+
+    const lines = input.split("\n").filter((l) => l.trim().length > 0);
+    const results: { line: string; isValid: boolean; errors: string[] }[] = [];
+
+    for (const line of lines) {
+      const parts = line.trim().split("|");
+      if (parts.length < 4) {
+        results.push({
+          line: line.trim(),
+          isValid: false,
+          errors: ["Format salah (butuh: number|mm|yyyy|cvv)"],
+        });
+        continue;
+      }
+      const [number, expMonth, expYear, cvv] = parts;
+      const result = validateCard(
+        number.trim(),
+        expMonth.trim(),
+        expYear.trim(),
+        cvv.trim(),
+      );
+      results.push({
+        line: line.trim(),
+        isValid: result.isValid,
+        errors: result.errors,
+      });
+    }
+
+    const valid = results.filter((r) => r.isValid).length;
+    const invalid = results.length - valid;
+
+    addHistory({
+      type: "bulk_validate",
+      source: "telegram",
+      input: JSON.stringify(lines),
+      output: JSON.stringify(results),
+      card_number: lines[0]?.split("|")[0] || null,
+      card_type: null,
+      is_valid: invalid === 0 ? 1 : 0,
+      bin_result: null,
+    });
+
+    const detail = results
+      .map((r, i) => {
+        const status = r.isValid ? "✅" : "❌";
+        const err = r.errors.length > 0 ? ` (${r.errors.join(", ")})` : "";
+        return `${i + 1}. ${status} ${r.line}${err}`;
+      })
+      .join("\n");
+
+    const summary = `📋 *Bulk Validate Result*\n\nTotal: ${results.length} | Valid: ${valid} | Invalid: ${invalid}\n\n`;
+
+    if (results.length > 20) {
+      const fileContent = results
+        .map((r, i) => {
+          const status = r.isValid ? "VALID" : "INVALID";
+          const err = r.errors.length > 0 ? ` | ${r.errors.join(", ")}` : "";
+          return `${i + 1}. [${status}] ${r.line}${err}`;
+        })
+        .join("\n");
+      const buffer = Buffer.from(
+        `Bulk Validate Result\nTotal: ${results.length} | Valid: ${valid} | Invalid: ${invalid}\n\n${fileContent}`,
+        "utf-8",
+      );
+      await ctx.replyWithDocument(
+        new InputFile(buffer, `bulk_validate_${Date.now()}.txt`),
+        {
+          caption: `📋 Total: ${results.length} | Valid: ${valid} | Invalid: ${invalid}`,
+          reply_markup: backKeyboard(),
+        },
+      );
+    } else {
+      await ctx.reply(`${summary}\`\`\`\n${detail}\n\`\`\``, {
+        parse_mode: "Markdown",
+        reply_markup: backKeyboard(),
+      });
+    }
+  });
+
   bot.command("history", async (ctx) => {
     const records = getHistory(10, 0);
     if (records.length === 0) {
@@ -189,6 +277,85 @@ Pilih menu di bawah:`;
       new InputFile(buffer, `history_${Date.now()}.txt`),
       {
         caption: `📄 Export ${records.length} records`,
+        reply_markup: backKeyboard(),
+      },
+    );
+  });
+
+  bot.on("message:document", async (ctx) => {
+    const doc = ctx.message.document;
+    if (!doc.file_name?.endsWith(".txt")) return;
+
+    const file = await ctx.getFile();
+    const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
+    const response = await fetch(url);
+    const text = await response.text();
+
+    const lines = text.split("\n").filter((l) => l.trim().length > 0);
+    if (lines.length === 0) {
+      await ctx.reply("❌ File kosong atau tidak ada data kartu.", {
+        reply_markup: backKeyboard(),
+      });
+      return;
+    }
+
+    const results: { line: string; isValid: boolean; errors: string[] }[] = [];
+
+    for (const line of lines) {
+      const parts = line.trim().split("|");
+      if (parts.length < 4) {
+        results.push({
+          line: line.trim(),
+          isValid: false,
+          errors: ["Format salah (butuh: number|mm|yyyy|cvv)"],
+        });
+        continue;
+      }
+      const [number, expMonth, expYear, cvv] = parts;
+      const result = validateCard(
+        number.trim(),
+        expMonth.trim(),
+        expYear.trim(),
+        cvv.trim(),
+      );
+      results.push({
+        line: line.trim(),
+        isValid: result.isValid,
+        errors: result.errors,
+      });
+    }
+
+    const valid = results.filter((r) => r.isValid).length;
+    const invalid = results.length - valid;
+
+    addHistory({
+      type: "bulk_validate",
+      source: "telegram",
+      input: JSON.stringify(lines),
+      output: JSON.stringify(results),
+      card_number: lines[0]?.split("|")[0] || null,
+      card_type: null,
+      is_valid: invalid === 0 ? 1 : 0,
+      bin_result: null,
+    });
+
+    const fileContent = results
+      .map((r, i) => {
+        const status = r.isValid ? "VALID" : "INVALID";
+        const err = r.errors.length > 0 ? ` | ${r.errors.join(", ")}` : "";
+        return `${i + 1}. [${status}] ${r.line}${err}`;
+      })
+      .join("\n");
+
+    const buffer = Buffer.from(
+      `Bulk Validate Result\nTotal: ${results.length} | Valid: ${valid} | Invalid: ${invalid}\n\n${fileContent}`,
+      "utf-8",
+    );
+
+    await ctx.replyWithDocument(
+      new InputFile(buffer, `bulk_validate_${Date.now()}.txt`),
+      {
+        caption: `📋 Total: ${results.length} | Valid: ${valid} | Invalid: ${invalid}`,
         reply_markup: backKeyboard(),
       },
     );

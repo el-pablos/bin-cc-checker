@@ -9,6 +9,8 @@ export function mainMenuKeyboard(): InlineKeyboard {
     .row()
     .text("🔍 Check BIN", "menu_bin")
     .row()
+    .text("📋 Bulk Validate", "menu_bulk")
+    .row()
     .text("📋 History", "menu_history")
     .row()
     .text("📄 Export TXT", "menu_export");

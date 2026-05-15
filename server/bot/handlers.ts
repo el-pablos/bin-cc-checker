@@ -52,6 +52,14 @@ export function setupCallbacks(bot: Bot) {
     );
   });
 
+  bot.callbackQuery("menu_bulk", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await ctx.editMessageText(
+      "📋 *Bulk Validate*\n\nKirim pesan dengan format `/bulk` diikuti list kartu (1 per baris):\n```\n/bulk\n4111111111111111|05|2030|123\n5500000000000004|08|2028|456\n```\n\nAtau upload file `.txt` dengan format yang sama (1 kartu per baris).",
+      { parse_mode: "Markdown", reply_markup: backKeyboard() },
+    );
+  });
+
   bot.callbackQuery("menu_history", async (ctx) => {
     await ctx.answerCallbackQuery();
     const records = getHistory(10, 0);
