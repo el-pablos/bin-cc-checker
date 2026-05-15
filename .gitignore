@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+*.local
+*.db
+*.sqlite
+*.key
+*.pem
+.DS_Store
+Thumbs.db
+.vscode
+.idea
